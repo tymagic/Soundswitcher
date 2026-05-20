@@ -18,33 +18,24 @@
     "appId": "com.soundswitcher.app",
     "productName": "Sound Switcher",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "main.js",
       "preload.js",
       "renderer/**/*",
       "scripts/**/*",
-      "assets/icon.png",
-      "node_modules/**/*"
+      "assets/**/*"
     ],
     "asar": true,
+    "asarUnpack": [
+      "scripts/**/*",
+      "assets/**/*"
+    ],
+    "npmRebuild": false,
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
-      "icon": "assets/icon.png",
-      "sign": null
-    },
-    "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": false,
-      "createDesktopShortcut": true,
-      "shortcutName": "Sound Switcher"
+      "target": "dir",
+      "icon": "assets/icon.png"
     }
   }
 }

@@ -33,6 +33,14 @@ if ($ParamsJson -and (Test-Path $ParamsJson)) {
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CSPath = Join-Path $ScriptDir "AudioAPI.cs"
 
+# 如果 CSPath 不存在（从其他路径调用时），尝试从 app.asar.unpacked 查找
+if (-not (Test-Path $CSPath)) {
+    $resourceDir = Join-Path $env:ProgramFiles "Sound Switcher\resources\app.asar.unpacked\scripts"
+    if (Test-Path (Join-Path $resourceDir "AudioAPI.cs")) {
+        $CSPath = Join-Path $resourceDir "AudioAPI.cs"
+    }
+}
+
 try {
     Add-Type -Path $CSPath -ErrorAction Stop
 } catch {

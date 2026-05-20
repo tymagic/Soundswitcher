@@ -11,6 +11,30 @@ let isQuitting = false;
 // 快捷键配置
 const HOTKEY = 'Ctrl+Shift+F12';
 
+// 判断是否运行在 asar 打包环境中
+const isAsar = __dirname.includes('app.asar');
+
+// 获取应用根目录（兼容 asar 和开发模式）
+function getAppRoot() {
+  if (isAsar) {
+    // 打包后: resources/app.asar -> resources/
+    return path.join(process.resourcesPath, 'app.asar');
+  }
+  return __dirname;
+}
+
+// 获取脚本路径（scripts 在 asarUnpack 中，实际路径是 app.asar.unpacked）
+function getScriptsDir() {
+  if (isAsar) {
+    return path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts');
+  }
+  return path.join(__dirname, 'scripts');
+}
+
+function getPsPath(scriptName) {
+  return path.join(getScriptsDir(), scriptName);
+}
+
 // 运行 PowerShell 脚本（修复中文乱码：-File + 单独参数避免编码问题）
 function runPowerShell(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
@@ -57,10 +81,6 @@ function runPowerShell(scriptPath, args = []) {
   });
 }
 
-function getPsPath(scriptName) {
-  return path.join(__dirname, 'scripts', scriptName);
-}
-
 // 通过临时 JSON 文件传参（避免命令行编码问题影响中文）
 async function runPowerShellWithJson(action, jsonParams) {
   const tmpFile = path.join(os.tmpdir(), `soundswitcher_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.json`);
@@ -74,6 +94,16 @@ async function runPowerShellWithJson(action, jsonParams) {
   return runPowerShell(script, args);
 }
 
+// 获取资源文件路径（assets 在 asar 内可正常读取，但图标需要文件系统路径）
+function getAssetPath(fileName) {
+  if (isAsar) {
+    // 打包后尝试从 unpacked 目录读取
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', fileName);
+    if (fs.existsSync(unpacked)) return unpacked;
+  }
+  return path.join(__dirname, 'assets', fileName);
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 500,
@@ -83,7 +113,7 @@ function createWindow() {
     transparent: true,
     alwaysOnTop: false,
     skipTaskbar: false,
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -102,7 +132,7 @@ function createWindow() {
 }
 
 // 图标路径
-const ICON_PATH = path.join(__dirname, 'assets', 'icon.png');
+const ICON_PATH = getAssetPath('icon.png');
 
 function createTrayIcon() {
   // 使用应用主图标（自动缩放到托盘尺寸）
@@ -177,11 +207,19 @@ async function refreshDevices() {
 // 创建桌面快捷方式
 async function createDesktopShortcut() {
   try {
-    const shortcutScript = path.join(__dirname, 'scripts', 'create-shortcut.ps1');
-    const batPath = path.join(__dirname, 'start.bat');
+    const shortcutScript = getPsPath('create-shortcut.ps1');
+
+    // 打包后用 exe 路径，开发模式用 start.bat
+    let targetPath;
+    if (isAsar && app.getPath) {
+      // 打包后: 使用当前运行的 exe
+      targetPath = process.execPath;
+    } else {
+      targetPath = path.join(__dirname, 'start.bat');
+    }
 
     const result = await runPowerShell(shortcutScript, [
-      '-TargetPath', batPath,
+      '-TargetPath', targetPath,
       '-IconPath', ICON_PATH,
       '-ShortcutName', 'Sound Switcher',
     ]);
@@ -251,6 +289,21 @@ ipcMain.handle('close-window', () => { if (mainWindow) mainWindow.hide(); });
 ipcMain.handle('minimize-window', () => { if (mainWindow) mainWindow.minimize(); });
 
 ipcMain.handle('create-shortcut', async () => await createDesktopShortcut());
+
+// ====== 单实例锁 ======
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // 用户尝试启动第二个实例，激活已有窗口
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 // ====== 应用启动 ======
 app.whenReady().then(async () => {
