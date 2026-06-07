@@ -4,19 +4,26 @@
 
 ## 下载
 
-### 安装包（推荐）
+👉 [Sound-Switcher-v1.0.0-win-x64.zip](https://github.com/tymagic/Soundswitcher/releases/latest)（约 105 MB）
 
-👉 **[Sound-Switcher-Setup-v1.0.0.exe](https://github.com/tymagic/Soundswitcher/releases/latest)**
+### 安装方法
 
-双击运行，自动安装到 `C:\Program Files\SoundSwitcher\`，创建桌面和开始菜单快捷方式，支持卸载。
+**方法一：安装到 Program Files（推荐，解决安全软件拦截）**
 
-### 便携版
+1. 下载并解压 zip
+2. 右键 `Sound-Switcher-Install.ps1` → **使用 PowerShell 运行**
+3. 自动安装到 `C:\Program Files\SoundSwitcher\`，创建桌面和开始菜单快捷方式
 
-👉 **[Sound-Switcher-v1.0.0-win-x64.zip](https://github.com/tymagic/Soundswitcher/releases/latest)**
+**方法二：便携运行**
 
-下载后解压到任意目录，双击 `Sound Switcher.exe` 运行（无需安装）。
+1. 下载并解压 zip 到任意目录
+2. 进入 `release\win-unpacked\`，双击 `Sound Switcher.exe`
 
-> **注意：** 如果装了腾讯电脑管家/360 等安全软件，建议使用安装包方式，或将解压目录加入信任区。
+> **提示：** 如果装了腾讯电脑管家/360 等安全软件，建议使用**方法一**，或将解压目录加入信任区。
+
+### 卸载
+
+开始菜单 → Sound Switcher → Uninstall，或运行 `C:\Program Files\SoundSwitcher\uninstall.bat`
 
 ---
 
@@ -45,10 +52,7 @@ npm start
 ```bash
 npm install
 npm run build
-# 打包产物在 release/win-unpacked/
-
-# 或生成安装包：
-powershell -File installer/build-installer.ps1
+# 产物在 release/win-unpacked/
 ```
 
 ## 使用说明
@@ -71,27 +75,6 @@ powershell -File installer/build-installer.ps1
 
 - Windows 10/11（64位）
 - 无需额外依赖
-
-## 项目结构
-
-```
-sound-switcher/
-├── main.js              # Electron 主进程
-├── preload.js           # IPC 桥接
-├── renderer/            # 前端界面
-├── scripts/             # PowerShell/C# 音频 API
-├── assets/              # 图标资源
-├── installer/           # 安装包构建脚本
-├── package.json
-└── README.md
-```
-
-## 技术实现
-
-- **框架**：Electron 30
-- **音频 API**：Windows Core Audio API via C# P/Invoke
-- **打包**：electron-builder + asar
-- **安装包**：自解压 bat + zip 合并 exe
 
 ## License
 
